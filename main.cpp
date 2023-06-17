@@ -2,9 +2,6 @@
 #include <string>
 #include <curl/curl.h>
 
-#include <iostream>
-#include <string>
-
 std::string urlEncode(const std::string& input) {
     std::string encodedString;
     const std::string safeChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~";
