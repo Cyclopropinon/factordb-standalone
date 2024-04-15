@@ -1,6 +1,7 @@
+#include <curl/curl.h>
+#include <fstream>
 #include <iostream>
 #include <string>
-#include <curl/curl.h>
 
 std::string urlEncode(const std::string& input) {
     std::string encodedString;
@@ -26,42 +27,63 @@ size_t writeCallback(char* contents, size_t size, size_t nmemb, std::string* out
     return totalSize;
 }
 
-int main() {
-    // Initialize the libcurl library
+int main(int argc, char* argv[]) {
+    // Prüfen, ob das Flag --file übergeben wurde
+    bool useFile = false;
+    if (argc == 2 && std::string(argv[1]) == "--file") {
+        useFile = true;
+    }
+
     curl_global_init(CURL_GLOBAL_DEFAULT);
 while(true){
     // Create a CURL object for making HTTP requests
     CURL* curl = curl_easy_init();
 
-    if (curl) {
-        // Prompt the user to enter a number
-        std::cout << "Enter a number: ";
-        std::string input;
-        std::getline(std::cin,input);
-        auto URLizedInput = urlEncode(input);
+        if (curl)
+        {
+            std::string input;
+            if (useFile)
+            {
+                // Lese die Zahl aus der Datei "test.txt"
+                std::ifstream inputFile("test.txt");
+                if (inputFile.is_open())
+                {
+                    std::getline(inputFile, input);
+                    inputFile.close();
+                } else {
+                    // Prompt the user to enter a number
+                    std::cerr << "Datei konnte nicht geöffnet werden." << std::endl;
+                    return 1;
+                }
+            } else {
+                std::cout << "Enter a number: ";
+                std::getline(std::cin, input);
+            }
+            auto URLizedInput = urlEncode(input);
 
-        // Construct the URL for Factordb
-        std::string url = "http://factordb.com/api?query=" + URLizedInput;
-//        std::cout << url << '\n';
+            // Construct the URL for Factordb
+            std::string url = "http://factordb.com/api?query=" + URLizedInput;
+//            std::cout << url << '\n';
 
-        // Set the URL for the HTTP request
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+            // Set the URL for the HTTP request
+            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
-        // Set the callback function to handle the response
-        std::string response;
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+            // Set the callback function to handle the response
+            std::string response;
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
-        // Perform the HTTP request
-        CURLcode result = curl_easy_perform(curl);
+            // Perform the HTTP request
+            CURLcode result = curl_easy_perform(curl);
 
-        // Check if the request was successful
-        if (result == CURLE_OK) {
-            // Print the response from Factordb
-            std::cout << "FactorDB response:\n" << response << std::endl;
-        } else {
-            std::cout << "Request failed: " << curl_easy_strerror(result) << std::endl;
-        }
+            // Check if the request was successful
+            if (result == CURLE_OK)
+            {
+                // Print the response from Factordb
+                std::cout << "FactorDB response:\n" << response << std::endl;
+            } else {
+                std::cout << "Request failed: " << curl_easy_strerror(result) << std::endl;
+            }
 
         // Cleanup the CURL object
         curl_easy_cleanup(curl);
