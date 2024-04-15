@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <curl/curl.h>
 #include <fstream>
 #include <iostream>
@@ -27,8 +28,32 @@ size_t writeCallback(char* contents, size_t size, size_t nmemb, std::string* out
     return totalSize;
 }
 
-int main(int argc, char* argv[]) {
+//uint64_t extrahiereID(const std::string& input) {
+std::string extrahiereID(const std::string& input) {
+    // Suchen nach dem Index des ersten Vorkommens von ":"
+    size_t start_index = input.find(":");
+    if (start_index == std::string::npos)
+        return 0; // Rückgabe 0 im Fehlerfall
+
+    // Suchen nach dem Index des ersten Vorkommens von ","
+    size_t end_index = input.find(",", start_index);
+    if (end_index == std::string::npos)
+        return 0; // Rückgabe 0 im Fehlerfall
+
+    // Extrahieren des Substrings, der die ID enthält
+    std::string id_str = input.substr(start_index + 1, end_index - start_index - 1);
+
+    // Konvertieren des Substrings in eine uint64_t-Zahl
+    //uint64_t id = std::stoull(id_str);
+
+    //return id;
+    return id_str;
+}
+
+int main(int argc, char* argv[])
+{
     std::string filename;
+    std::ifstream inputFile;
     // Prüfen, ob das Flag --file übergeben wurde
     bool useFile = false;
     if (argc == 2 && std::string(argv[1]) == "--file")
@@ -51,6 +76,17 @@ int main(int argc, char* argv[]) {
         pclose(pipe);
         // Entferne Zeilenumbruch aus dem Dateinamen
         filename.erase(filename.find_last_not_of("\n") + 1);
+
+        // Lese die Zahl aus der Datei "test.txt"
+        inputFile.open(filename);
+        if (inputFile.is_open())
+        {
+            //
+        } else {
+            // Prompt the user to enter a number
+            std::cerr << "Datei konnte nicht geöffnet werden." << std::endl;
+            return 1;
+        }
     }
 
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -63,17 +99,8 @@ while(true){
             std::string input;
             if (useFile)
             {
-                // Lese die Zahl aus der Datei "test.txt"
-                std::ifstream inputFile(filename);
-                if (inputFile.is_open())
-                {
-                    std::getline(inputFile, input);
-                    inputFile.close();
-                } else {
-                    // Prompt the user to enter a number
-                    std::cerr << "Datei konnte nicht geöffnet werden." << std::endl;
-                    return 1;
-                }
+                std::getline(inputFile, input);
+                if (input == "") goto ende;                
             } else {
                 std::cout << "Enter a number: ";
                 std::getline(std::cin, input);
@@ -99,7 +126,13 @@ while(true){
             if (result == CURLE_OK)
             {
                 // Print the response from Factordb
-                std::cout << "FactorDB response:\n" << response << std::endl;
+                if (useFile)
+                {
+                    std::cout << "FactorDB id:\t" << extrahiereID(response) << std::endl;
+                } else {
+                    std::cout << "FactorDB response:\n" << response << std::endl;
+                }
+                
             } else {
                 std::cout << "Request failed: " << curl_easy_strerror(result) << std::endl;
             }
@@ -107,10 +140,12 @@ while(true){
         // Cleanup the CURL object
         curl_easy_cleanup(curl);
 
-        if(useFile) goto ende;
+        //if(useFile) goto ende;
     }}
 
     ende:
+
+    inputFile.close();
 
     // Cleanup the libcurl library
     curl_global_cleanup();
