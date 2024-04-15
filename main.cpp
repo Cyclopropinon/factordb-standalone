@@ -28,10 +28,29 @@ size_t writeCallback(char* contents, size_t size, size_t nmemb, std::string* out
 }
 
 int main(int argc, char* argv[]) {
+    std::string filename;
     // Prüfen, ob das Flag --file übergeben wurde
     bool useFile = false;
-    if (argc == 2 && std::string(argv[1]) == "--file") {
+    if (argc == 2 && std::string(argv[1]) == "--file")
+    {
         useFile = true;
+
+        // Zenity-Dialog anzeigen, um den Dateinamen zu erhalten
+        FILE* pipe = popen("zenity --file-selection --title=\"Select a file\"", "r");
+        if (!pipe)
+        {
+            std::cerr << "Zenity konnte nicht ausgeführt werden." << std::endl;
+            return 1;
+        }
+        char buffer[512];
+        while (!feof(pipe))
+        {
+            if (fgets(buffer, 512, pipe) != NULL)
+                filename += buffer;
+        }
+        pclose(pipe);
+        // Entferne Zeilenumbruch aus dem Dateinamen
+        filename.erase(filename.find_last_not_of("\n") + 1);
     }
 
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -45,7 +64,7 @@ while(true){
             if (useFile)
             {
                 // Lese die Zahl aus der Datei "test.txt"
-                std::ifstream inputFile("test.txt");
+                std::ifstream inputFile(filename);
                 if (inputFile.is_open())
                 {
                     std::getline(inputFile, input);
@@ -87,7 +106,11 @@ while(true){
 
         // Cleanup the CURL object
         curl_easy_cleanup(curl);
+
+        if(useFile) goto ende;
     }}
+
+    ende:
 
     // Cleanup the libcurl library
     curl_global_cleanup();
