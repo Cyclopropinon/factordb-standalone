@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstring>
 #include <curl/curl.h>
 #include <fstream>
 #include <iostream>
@@ -50,8 +51,30 @@ std::string extrahiereID(const std::string& input) {
     return id_str;
 }
 
+std::string extrahiereStatus(const std::string& input) {
+    // Suchen nach dem Index des ersten Vorkommens von "\"status\":\""
+    size_t start_index = input.find("\"status\":\"");
+    if (start_index == std::string::npos)
+        return ""; // Rückgabe eines leeren Strings im Fehlerfall
+    //std::cerr << "\nstart_index: " << start_index;
+    // Verschieben des Startindex auf das Ende des gefundenen Musters
+    start_index += strlen("\"status\":\""); // Die Länge von "\"status\":\"" ist 9
+
+    // Suchen nach dem Index des ersten Vorkommens von "\""
+    size_t end_index = input.find("\",\"", start_index);
+    if (end_index == std::string::npos)
+        return ""; // Rückgabe eines leeren Strings im Fehlerfall
+    //std::cerr << "\nend_index: " << end_index << std::endl;
+
+    // Extrahieren des Substrings, der den Status enthält
+    std::string status = input.substr(start_index, end_index - start_index);
+
+    return status;
+}
+
 int main(int argc, char* argv[])
 {
+    uint64_t anzAufrufe = 0;
     std::string filename;
     std::ifstream inputFile;
     // Prüfen, ob das Flag --file übergeben wurde
@@ -96,6 +119,8 @@ while(true){
 
         if (curl)
         {
+            anzAufrufe++;
+
             std::string input;
             if (useFile)
             {
@@ -128,7 +153,7 @@ while(true){
                 // Print the response from Factordb
                 if (useFile)
                 {
-                    std::cout << "FactorDB id:\t" << extrahiereID(response) << std::endl;
+                    std::cout << "FactorDB Nr.: " << anzAufrufe << " Status: " << extrahiereStatus(response) << "\tAnzahl der Stellen: " << input.size() << "   \tid: " << extrahiereID(response) << std::endl;
                 } else {
                     std::cout << "FactorDB response:\n" << response << std::endl;
                 }
@@ -150,5 +175,5 @@ while(true){
     // Cleanup the libcurl library
     curl_global_cleanup();
 
-    return 0;
+    return anzAufrufe;
 }
