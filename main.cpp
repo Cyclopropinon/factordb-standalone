@@ -79,24 +79,30 @@ int main(int argc, char* argv[])
     std::ifstream inputFile;
     // Prüfen, ob das Flag --file übergeben wurde
     bool useFile = false;
-    if (argc == 2 && std::string(argv[1]) == "--file")
+    if (argc >= 2 && std::string(argv[1]) == "--file")
     {
         useFile = true;
 
-        // Zenity-Dialog anzeigen, um den Dateinamen zu erhalten
-        FILE* pipe = popen("zenity --file-selection --title=\"Select a file\"", "r");
-        if (!pipe)
+        if (argc == 2)
         {
-            std::cerr << "Zenity konnte nicht ausgeführt werden." << std::endl;
-            return 1;
+            // Zenity-Dialog anzeigen, um den Dateinamen zu erhalten
+            FILE* pipe = popen("zenity --file-selection --title=\"Select a file\"", "r");
+            if (!pipe)
+            {
+                std::cerr << "Zenity konnte nicht ausgeführt werden." << std::endl;
+                return 1;
+            }
+            char buffer[512];
+            while (!feof(pipe))
+            {
+                if (fgets(buffer, 512, pipe) != NULL)
+                    filename += buffer;
+            }
+            pclose(pipe);
+        } else {
+            filename = argv[2];
         }
-        char buffer[512];
-        while (!feof(pipe))
-        {
-            if (fgets(buffer, 512, pipe) != NULL)
-                filename += buffer;
-        }
-        pclose(pipe);
+        
         // Entferne Zeilenumbruch aus dem Dateinamen
         filename.erase(filename.find_last_not_of("\n") + 1);
 
