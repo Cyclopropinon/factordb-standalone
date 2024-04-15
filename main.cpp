@@ -159,7 +159,8 @@ while(true){
                 }
                 
             } else {
-                std::cout << "Request failed: " << curl_easy_strerror(result) << std::endl;
+                std::cout << "FactorDB Nr.: " << anzAufrufe << " Status: [ERR]\tAnzahl der Stellen: " << input.size() << "   \tRequest failed: " << curl_easy_strerror(result) << std::endl;
+                //std::cout << "Request failed: " << curl_easy_strerror(result) << std::endl;
             }
 
         // Cleanup the CURL object
